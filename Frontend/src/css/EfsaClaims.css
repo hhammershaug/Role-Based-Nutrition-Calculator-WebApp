@@ -1,0 +1,86 @@
+.vitamins {
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.1s;
+}
+.vitamins:hover {
+    background-color: #67696a;
+    transition: 0.3s;
+    color: white;
+}
+.vitamins.active {
+    /*background-color: #e9ecef;*/
+    transition: 0.3s;
+}
+
+.minerals{
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.minerals:hover {
+    background-color: #67696a;
+    transition: 0.3s;
+    color: white;
+}
+.minerals.active{
+    transition: 0.3s;
+}
+
+.vitamin-claims{
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.vitamin-claims::after{
+    transition: 0.3s;
+}
+.mineral-claims{
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.mineral-claims::after{
+    transition: 0.3s;
+}
+.others{
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.others:hover {
+    background-color: #67696a;
+    transition: 0.3s;
+    color: white;
+    
+}
+.others.active{
+    transition: 0.3s;
+}
+.other-claims{
+    padding: 5px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+
+.notFullfilledContent{
+    padding: 2px;
+    flex-wrap: nowrap;
+}
+/*
+@media (max-width: 991.98px){
+    .health_claims{
+        width: 300px;
+    }    
+}
+    */
+
+@media (max-width: 770px) {
+    .health_claims {
+        width: 100%;
+    }
+}

@@ -1,0 +1,33 @@
+# ASP.NET Core
+bin/
+obj/
+*.user
+*.vspscc
+*.suo
+*.userosscache
+*.userprefs
+*.log
+
+# Build results
+*.dll
+*.exe
+*.app
+*.so
+*.dylib
+*.pdb
+
+# Visual Studio specific
+.vs/
+.idea/
+*.sln.docstates
+
+# Dependencies
+node_modules/
+bower_components/
+packages/
+
+# SQLite temporary files
+*.db-shm
+*.db-wal
+
+.DS_Store

@@ -1,0 +1,445 @@
+import React, { useState } from "react";
+import {
+  Table,
+  Row,
+  Col,
+  Form,
+  Accordion,
+  AccordionBody,
+  Button,
+} from "react-bootstrap";
+import { Product } from "../types/product";
+import { Link, useNavigate } from "react-router-dom";
+import "../css/ProductTable.css";
+import API_URL from "../apiConfig";
+import ClaimsView from "../shared/ClaimsView";
+import ProductActions from "../components/ProductActions";
+import { deleteProduct } from "./ProductService";
+import SplitHtml from "../components/SplitHtmlProps";
+import { useAuth } from "../context/AuthContext";
+import NokkelhullCheckmark from "../components/NokkelhullCheckmark";
+
+interface ProductTableProps {
+  products: Product[];
+  apiUrl: string;
+  onProductDeleted: (productId: number) => void;
+  sortColumn: string;
+  sortDirection: "asc" | "desc";
+  activeSortMode: "column" | "nyest" | "eldst";
+  handleSort: (column: string) => void;
+  toggleSortMode: (mode: "column" | "nyest" | "eldst") => void;
+  filterNokkelhullet: boolean;
+  setFilterNokkelhullet: (filter: boolean) => void;
+}
+
+const ProductTable: React.FC<ProductTableProps> = ({
+  products,
+  sortColumn,
+  sortDirection,
+  activeSortMode,
+  handleSort,
+  toggleSortMode,
+  filterNokkelhullet,
+  setFilterNokkelhullet,
+}) => {
+  const [showId, setShowId] = useState<boolean>(false);
+  const [showNutrition, setShowNutrition] = useState<boolean>(false);
+  const [showClaims, setShowClaims] = React.useState<boolean>(false);
+  const [claimsContent, setClaimsContent] = React.useState<string>("");
+  //const [visibleNutrition, setVisibleNutrition] = useState<{[key: number]: boolean;}>({});
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showFoodcategory, setShowFoodcategory] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  const handleShowClaims = (content: string, product: any) => {
+    setClaimsContent(content);
+    setShowClaims(true);
+    setSelectedProduct(product);
+  };
+
+  /*
+  const finalSortedProducts = sortedProducts.sort((a, b) => {
+    if (activeSortMode === "id") {
+      return sortById === "nyest" ? b.productId - a.productId : a.productId - b.productId;
+    } else {
+      return 0;
+    }
+  });
+  */
+
+  // Formaterer innholdet i kortet
+  const formatContent = (content: string) => {
+    return content.split("\n").map((line, index) => (
+      // For hver linje i innholdet, returnes en paragraf via HTML,
+      // dangerouslySetInnerHTML er innerHTML i React
+      <p key={index} dangerouslySetInnerHTML={{ __html: line }} />
+    ));
+  };
+
+  return (
+    <>
+      <Row className="mb-3">
+        <Col md={4} lg={3}>
+          <Accordion defaultActiveKey={"1"}>
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>Filter</Accordion.Header>
+              <AccordionBody>
+                <Form>
+                  <div className="d-flex flex-column gap-2">
+                    <h5>Vis/Gjem kolonner</h5>
+                    <Form.Check
+                      type="checkbox"
+                      id="showIdCheckbox"
+                      label="Vis ID"
+                      onChange={() => setShowId(!showId)}
+                      className="me-2"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    />
+                    <Form.Check
+                      type="checkbox"
+                      id="showFoodcategoryCheckbox"
+                      label="Vis Matkategori"
+                      onChange={() => setShowFoodcategory(!showFoodcategory)}
+                      className="me-2"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    />
+                    <Form.Check
+                      type="checkbox"
+                      id="showNutritionCheckbox"
+                      label="Vis Næringsmiddel"
+                      onChange={() => setShowNutrition(!showNutrition)}
+                      className="me-2"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    />
+                  </div>
+                  <hr />
+                  <h5>Filtrer</h5>
+                  <Form.Check
+                    type="checkbox"
+                    id="filterNokkelhulletCheckbox"
+                    label="Vis kun produkter med Nøkkelhullet"
+                    checked={filterNokkelhullet}
+                    onChange={(e) => setFilterNokkelhullet(e.target.checked)}
+                    className="me-2"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  />
+                </Form>
+              </AccordionBody>
+            </Accordion.Item>
+          </Accordion>
+        </Col>
+        <Col md={8} lg={9}>
+          <Accordion defaultActiveKey={"1"}>
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>Sortering</Accordion.Header>
+              <AccordionBody>
+                <div className=" sort-buttons" data-toggle="buttons">
+                  <Button
+                    className="btn btn-primary"
+                    onClick={() => handleSort("name")}
+                  >
+                    Navn
+                    {sortColumn === "name" && sortDirection === "asc"
+                      ? " (A-Å)"
+                      : " (Å-A)"}
+                  </Button>
+                  <Button
+                    className="btn btn-primary"
+                    onClick={() => handleSort("group")}
+                  >
+                    Gruppe
+                    {sortColumn === "group" && sortDirection === "asc"
+                      ? " (A-Å)"
+                      : " (Å-A)"}
+                  </Button>
+                  <label
+                    className={`btn btn-primary ${
+                      activeSortMode === "nyest" ? "active" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="options"
+                      id="option2"
+                      autoComplete="off"
+                      checked={activeSortMode === "nyest"}
+                      onChange={() => toggleSortMode("nyest")}
+                    />{" "}
+                    &nbsp; <i className="bi bi-sort-numeric-down"></i> Nyest
+                  </label>
+                  <label
+                    className={`btn btn-primary ${
+                      activeSortMode === "eldst" ? "active" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="options"
+                      id="option3"
+                      autoComplete="off"
+                      checked={activeSortMode === "eldst"}
+                      onChange={() => toggleSortMode("eldst")}
+                    />{" "}
+                    &nbsp; <i className="bi bi-sort-numeric-up"></i> Eldst
+                  </label>
+                </div>
+              </AccordionBody>
+            </Accordion.Item>
+          </Accordion>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <div className="card p-3">
+            <div className="table-responsive">
+              <Table hover className="rounded">
+                <caption>Produkttabell</caption>
+                <thead className="bg-light">
+                  <tr>
+                    {showId && <th className="align-middle">ID</th>}
+                    <th
+                      className={`sort-column align-middle text-center 
+                      ${
+                        sortColumn === "name" && activeSortMode === "column"
+                          ? "sorted-column"
+                          : ""
+                      }
+                      ${
+                        activeSortMode === "column" ? "active-sort-column" : ""
+                      }`}
+                      onClick={() => handleSort("name")}
+                      style={{ cursor: "pointer" }}
+                    >
+                      Navn{" "}
+                      {sortColumn === "name" ? (
+                        sortDirection === "asc" ? (
+                          <small>
+                            <i>(A-Å) ▲</i>
+                          </small>
+                        ) : (
+                          <small>
+                            <i>(Å-A) ▼</i>
+                          </small>
+                        )
+                      ) : (
+                        ""
+                      )}
+                    </th>
+                    <th className="align-middle text-center">Bilde</th>
+                    <th
+                      className={`sort-column align-middle text-center 
+                      ${
+                        sortColumn === "group" && activeSortMode === "column"
+                          ? "sorted-column"
+                          : ""
+                      }
+                      ${
+                        activeSortMode === "column" ? "active-sort-column" : ""
+                      }`}
+                      onClick={() => handleSort("group")}
+                      style={{ cursor: "pointer" }}
+                    >
+                      Matgruppe{" "}
+                      {sortColumn === "group" ? (
+                        sortDirection === "asc" ? (
+                          <small>
+                            <i>(A-Å) ▲</i>
+                          </small>
+                        ) : (
+                          <small>
+                            <i>(Å-A) ▼</i>
+                          </small>
+                        )
+                      ) : (
+                        ""
+                      )}
+                    </th>
+                    {showFoodcategory && (
+                      <th className="align-middle text-center">Matkategori</th>
+                    )}
+                    {showNutrition && (
+                      <th className="align-middle">
+                        Næringsmiddel pr. 100 g/ml
+                      </th>
+                    )}
+                    <th className="align-middle text-center">
+                      <img
+                        src={`${API_URL}/images/circle-keyhole-logo.png`}
+                        alt="Nøkkelhullet"
+                        className="img-fluid"
+                        style={{ maxHeight: "1.5rem" }} // Adjust size to match text
+                      />
+                      <span> Nøkkelhullet</span>
+                    </th>
+                    <th className="align-middle text-center">
+                      <img
+                        src={`${API_URL}/images/efsaLogoGreen.png`}
+                        alt="EFSA Ernæringspåstander"
+                        className="img-fluid"
+                        style={{ maxHeight: "1.5rem" }}
+                      />
+                      <span> Ernæringspåstander</span>
+                    </th>
+                    <th className="align-middle text-center">
+                      <img
+                        src={`${API_URL}/images/efsaLogoGreen.png`}
+                        alt="EFSA Ernæringspåstander"
+                        className="img-fluid"
+                        style={{ maxHeight: "1.5rem" }}
+                      />
+                      <span> Helseåstander</span>
+                    </th>
+                    <th className="align-middle text-center">Behandling</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.productId}>
+                      {showId && (
+                        <td className="align-middle px-2 py-4">
+                          {product.productId}
+                        </td>
+                      )}
+                      <td className="align-middle fw-bold px-2 py-4">
+                        <Link
+                          to={`/products/details/${product.productId}`}
+                          className="btn btn-link-primary"
+                        >
+                          {product.name}
+                        </Link>
+                      </td>
+
+                      <td className="align-middle text-center px-2 py-4">
+                        <Link
+                          to={`/products/details/${product.productId}`}
+                          className="text-decoration-none"
+                        >
+                          <img
+                            alt={product.name}
+                            className="rounded"
+                            style={{ maxWidth: "120px", maxHeight: "50px" }}
+                            src={
+                              product.imageUrl
+                                ? `${API_URL}${product.imageUrl}`
+                                : `${API_URL}/images/product_images/placeholder.png`
+                            }
+                          />
+                        </Link>
+                      </td>
+
+                      <td className="align-middle px-2 py-4">
+                        <SplitHtml htmlContent={product.group} part="after" />
+                      </td>
+                      {showFoodcategory && (
+                        <td className="align-middle small px-2 py-4">
+                          <SplitHtml htmlContent={product.type} part="after" />
+                        </td>
+                      )}
+
+                      {showNutrition && (
+                        <td className="align-middle small px-2 py-4">
+                          Energi: {product.calories}
+                          <br />
+                          Fett: {product.fat}
+                          <br />
+                          Mettet fett: {product.satFat}
+                          <br />
+                          Karbo: {product.carbs}
+                          <br />
+                          Nat sukker: {product.natSugar}
+                          <br />
+                          Tilsatt sukker: {product.addedSugar}
+                          <br />
+                          Fiber: {product.fiber}
+                          <br />
+                          Protein: {product.protein}
+                          <br />
+                          Salt: {product.salt}
+                        </td>
+                      )}
+                      <td className="align-middle text-center px-2 py-4">
+                        {product.hasNokkelhullet ? (
+                          <NokkelhullCheckmark />
+                        ) : (
+                          <></>
+                        )}
+                      </td>
+
+                      <td className="align-middle px-2 py-4">
+                        {product.hasEfsaNutrition}
+                      </td>
+
+                      <td className="align-middle text-center px-2 py-4">
+                        {product.hasEfsaHealth &&
+                        product.hasEfsaHealth.trim() !== "" ? (
+                          <>
+                            <div
+                              className="btn-group"
+                              role="group"
+                              aria-label="EFSA Visningsknapper"
+                            >
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={() =>
+                                  handleShowClaims(
+                                    product.hasEfsaHealth,
+                                    product
+                                  )
+                                }
+                              >
+                                <span>Vis påstander </span>
+                                <i className="bi bi-info-circle"></i>
+                              </button>
+                            </div>
+                            <br />
+                          </>
+                        ) : (
+                          ""
+                        )}
+                      </td>
+
+                      <td className="align-middle text-center px-2 py-4">
+                        <ProductActions
+                          productId={product.productId}
+                          onDelete={deleteProduct}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          </div>
+        </Col>
+      </Row>
+      {selectedProduct && (
+        <ClaimsView
+          show={showClaims}
+          onHide={() => setShowClaims(false)}
+          content={claimsContent}
+          product={selectedProduct}
+        />
+      )}
+    </>
+  );
+};
+
+export default ProductTable;

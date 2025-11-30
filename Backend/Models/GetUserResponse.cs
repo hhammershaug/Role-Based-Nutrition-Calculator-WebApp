@@ -1,0 +1,13 @@
+using Microsoft.AspNetCore.Identity;
+
+namespace Backend.Models
+{
+    public class GetUserResponse
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string OrganizationNumber { get; set; } = string.Empty;
+        public string ProfilePicture { get; set; } = string.Empty;
+    }
+}
